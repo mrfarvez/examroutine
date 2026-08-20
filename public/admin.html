@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Exam Finder</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-page">
+
+<header class="student-header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="header-logo">DIU</div>
+      <div>
+        <p class="brand-eyebrow">Daffodil International University</p>
+        <h1 class="brand-title">Exam Finder — Admin</h1>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <a href="/" class="header-nav-link">Student view</a>
+      <a href="#" id="logout-link" class="header-nav-link" style="display:none;">Log out</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- LOGIN -->
+  <div id="login-shell" class="login-shell" style="display:none;">
+    <div class="panel">
+      <h2>Admin login</h2>
+      <form id="login-form">
+        <div class="field" style="margin-bottom:14px;">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" required>
+        </div>
+        <div class="field" style="margin-bottom:18px;">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" style="width:100%;">Log in</button>
+        <p class="hint login-error" id="login-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard-shell" style="display:none;">
+
+    <section class="panel">
+      <div class="toolbar">
+        <h2 style="margin:0;">Exam sessions</h2>
+        <div class="spacer"></div>
+        <input id="new-session-name" placeholder="e.g. Midterm Fall 2026" style="max-width:220px;">
+        <button id="new-session-btn">+ New session</button>
+      </div>
+      <div id="sessions-list"></div>
+    </section>
+
+    <section class="panel" id="workspace-panel" style="display:none;">
+      <div class="toolbar">
+        <h2 id="workspace-title" style="margin:0;">Session</h2>
+        <div class="spacer"></div>
+        <span id="workspace-status" class="status-pill draft">draft</span>
+      </div>
+
+      <h3>1. Upload PDF</h3>
+      <div class="search-row" style="margin-bottom:14px;">
+        <div class="field">
+          <label for="upload-type">File type</label>
+          <select id="upload-type">
+            <option value="seatplan">Seat plan (room / date / time)</option>
+            <option value="routine">Routine (course / section reference)</option>
+          </select>
+        </div>
+      </div>
+      <label class="dropzone" id="dropzone" for="pdf-input">
+        📄 Click to choose a PDF, or drag it here
+        <input id="pdf-input" type="file" accept="application/pdf" style="display:none;">
+      </label>
+      <p class="hint" id="upload-status"></p>
+
+      <h3 style="margin-top:28px;">2. Review &amp; fix parsed rows</h3>
+      <p class="hint">Auto-parsing is best-effort — fix any wrong/missing cells directly in the grid below before publishing. Add rows manually with "+ Add row" if a line wasn't picked up at all.</p>
+      <div class="toolbar">
+        <button class="secondary" id="add-row-btn">+ Add row</button>
+        <button class="secondary" id="refresh-entries-btn">Refresh</button>
+        <div class="spacer"></div>
+        <span class="hint" id="entry-count"></span>
+      </div>
+      <div class="grid-scroll">
+        <table class="grid-table" id="entries-table">
+          <thead>
+            <tr>
+              <th>Course code</th>
+              <th>Course title</th>
+              <th>Teacher</th>
+              <th>Section</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Room</th>
+              <th>Roll start</th>
+              <th>Roll end</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entries-tbody"></tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:28px;">3. Publish</h3>
+      <div class="toolbar">
+        <button id="publish-btn">Publish to students</button>
+        <button class="secondary" id="unpublish-btn">Unpublish</button>
+        <div class="spacer"></div>
+        <button class="danger" id="delete-session-btn">Delete session</button>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>

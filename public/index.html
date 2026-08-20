@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Finder — DIU</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="student-page">
+
+<header class="student-header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="header-logo">DIU</div>
+      <div>
+        <p class="brand-eyebrow">Daffodil International University</p>
+        <h1 class="brand-title">Exam Finder</h1>
+      </div>
+    </div>
+    <nav><a href="/admin.html" class="header-nav-link">Admin</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="search-panel">
+    <form id="search-form" class="search-form">
+      <div class="search-field">
+        <label for="section">Select your section</label>
+        <select id="section" required>
+          <option value="">Loading sections...</option>
+        </select>
+      </div>
+      <button type="submit" class="search-btn">
+        <span class="search-btn-text">Find My Exams</span>
+        <span class="search-btn-arrow">&rarr;</span>
+      </button>
+    </form>
+  </section>
+
+  <section id="countdown-hero" class="countdown-hero" style="display:none;">
+    <p class="countdown-label">Next Exam</p>
+    <h2 id="countdown-course" class="countdown-course"></h2>
+    <p id="countdown-meta" class="countdown-meta"></p>
+    <div id="countdown-timer" class="countdown-timer"></div>
+  </section>
+
+  <section id="results-panel" style="display:none;">
+    <div id="day-picker" class="day-picker"></div>
+    <div id="results-body" class="exam-list"></div>
+  </section>
+
+</main>
+
+<footer class="site-footer">Exam Finder &middot; <a href="/admin.html">Admin panel</a></footer>
+
+<script src="/js/student.js"></script>
+</body>
+</html>
