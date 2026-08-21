@@ -368,6 +368,97 @@ function parseDataRows(rows, pageHeaders, totalPages) {
 }
 
 /* ═══════════════════════════════════════════════════
+   STAGE 6 — Post-process / cleanup
+   Fixes: header-row leaks, polluted course codes,
+   wrapped multi-line titles merged across room rows,
+   teacher initials glued to title end.
+   ═══════════════════════════════════════════════════ */
+
+function stripTrailingInitials(title) {
+  return title.replace(/(?<=[a-z])\s*[A-Z]{2,3}$/, '').trim();
+}
+
+function cleanParsedRows(results) {
+  const CODE_RE = /^([A-Z]{2,4}\d{3,4}[A-Z]?)\s+(.+)$/;
+
+  // Pass 1: drop header leaks, normalize course codes
+  const rows = [];
+  for (const row of results) {
+    if (/^ID$/i.test(row.course_code || '')) continue;
+    if (/^Course Title$/i.test((row.course_title || '').trim())) continue;
+
+    let code = (row.course_code || '').replace(/\s+/g, ' ').trim();
+    let extraWords = '';
+    if (code && !/^[A-Z]{2,4}\d{3,4}[A-Z]?$/.test(code)) {
+      const m = code.match(CODE_RE);
+      if (m) {
+        code = m[1];
+        extraWords = m[2].trim();
+      }
+    }
+    row.course_code = code || null;
+    if (extraWords) row.course_title = `${extraWords} ${row.course_title || ''}`.trim();
+    if (row.course_code) rows.push(row);
+  }
+
+  // Pass 2: merge wrapped title fragments within consecutive same-context groups
+  const groups = [];
+  for (const row of rows) {
+    const key = [row.course_code, row.teacher_initial, row.section, row.exam_date, row.time_slot].join('|');
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.rows.push(row);
+    else groups.push({ key, rows: [row] });
+  }
+
+  for (const group of groups) {
+    const fragments = [];
+    for (const r of group.rows) {
+      const t = (r.course_title || '').replace(/\s+/g, ' ').trim();
+      if (t && !fragments.some((x) => x.toLowerCase() === t.toLowerCase())) fragments.push(t);
+    }
+    if (!fragments.length) continue;
+    let full = fragments.join(' ').replace(/\s+/g, ' ').trim();
+    full = stripTrailingInitials(full);
+    if (!full) continue;
+    for (const r of group.rows) r.course_title = full;
+  }
+
+  // Pass 3: unify split titles across groups sharing a course_code.
+  // A wrapped title can land on different room rows of different groups;
+  // if every variant is a consecutive word-subsequence of the longest
+  // variant, the longest one is the real title.
+  const codeGroups = new Map();
+  for (const group of groups) {
+    const code = group.rows[0].course_code;
+    if (!codeGroups.has(code)) codeGroups.set(code, []);
+    codeGroups.get(code).push(group);
+  }
+  for (const [, gs] of codeGroups) {
+    const distinct = [...new Set(gs.map((g) => g.rows[0].course_title).filter(Boolean))];
+    if (distinct.length <= 1) continue;
+    const sorted = [...distinct].sort((a, b) => b.length - a.length);
+    const best = sorted[0];
+    const bestWords = best.toLowerCase().split(' ');
+    const isSubseq = (small) => {
+      const sw = small.toLowerCase().split(' ');
+      if (sw.length >= bestWords.length) return false;
+      for (let i = 0; i <= bestWords.length - sw.length; i++) {
+        let ok = true;
+        for (let j = 0; j < sw.length; j++) {
+          if (bestWords[i + j] !== sw[j]) { ok = false; break; }
+        }
+        if (ok) return true;
+      }
+      return false;
+    };
+    if (!sorted.slice(1).every(isSubseq)) continue;
+    for (const g of gs) for (const r of g.rows) r.course_title = best;
+  }
+
+  return rows;
+}
+
+/* ═══════════════════════════════════════════════════
    Main parse entry point
    ═══════════════════════════════════════════════════ */
 
@@ -384,11 +475,12 @@ async function parsePdfBuffer(buffer, type) {
   }
 
   const { results, unparsedLines } = parseDataRows(rows, pageHeaders, totalPages);
-  console.log(`[parser] Result: ${results.length} parsed, ${unparsedLines.length} unparsed`);
+  const cleanedResults = cleanParsedRows(results);
+  console.log(`[parser] Result: ${results.length} parsed (${cleanedResults.length} after cleanup), ${unparsedLines.length} unparsed`);
 
   return {
     totalLines: items.length,
-    parsedRows: results,
+    parsedRows: cleanedResults,
     unparsedLines,
     debug: {
       totalPages,
