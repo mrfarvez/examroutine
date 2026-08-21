@@ -86,21 +86,121 @@ function mergeExams(rows) {
   return exams;
 }
 
-/* ── Sections dropdown ── */
+/* ── Section combobox ── */
+let allSections = [];
+let comboActiveIndex = -1;
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function normalizeSection(s) {
+  return (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function setComboError(show) {
+  document.getElementById('section').classList.toggle('invalid', show);
+  document.getElementById('section-error').style.display = show ? 'block' : 'none';
+}
+
+function closeComboList() {
+  document.getElementById('section-list').classList.remove('open');
+  comboActiveIndex = -1;
+}
+
+function selectSection(value) {
+  const input = document.getElementById('section');
+  input.value = value;
+  setComboError(false);
+  closeComboList();
+}
+
+function renderComboList(query) {
+  const list = document.getElementById('section-list');
+  const q = normalizeSection(query);
+  const matches = q ? allSections.filter((s) => normalizeSection(s).includes(q)) : allSections;
+
+  if (!allSections.length) {
+    list.innerHTML = '<div class="combo-empty">No published schedules yet</div>';
+  } else if (!matches.length) {
+    list.innerHTML = `<div class="combo-empty">No section matches &ldquo;${escapeHtml(query)}&rdquo;</div>`;
+  } else {
+    list.innerHTML = matches.map((s, i) =>
+      `<div class="combo-item${i === comboActiveIndex ? ' active' : ''}" role="option" data-value="${s}">${s}</div>`
+    ).join('');
+  }
+  list.classList.add('open');
+
+  list.querySelectorAll('.combo-item').forEach((item) => {
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      selectSection(item.dataset.value);
+    });
+  });
+}
+
+function moveComboActive(dir) {
+  const items = [...document.querySelectorAll('#section-list .combo-item')];
+  if (!items.length) return;
+  comboActiveIndex += dir;
+  if (comboActiveIndex < 0) comboActiveIndex = items.length - 1;
+  if (comboActiveIndex >= items.length) comboActiveIndex = 0;
+  items.forEach((el, i) => el.classList.toggle('active', i === comboActiveIndex));
+  items[comboActiveIndex].scrollIntoView({ block: 'nearest' });
+}
+
+function wireCombobox() {
+  const input = document.getElementById('section');
+  const list = document.getElementById('section-list');
+
+  input.addEventListener('focus', () => renderComboList(input.value));
+  input.addEventListener('input', () => {
+    setComboError(false);
+    comboActiveIndex = -1;
+    renderComboList(input.value);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    const open = list.classList.contains('open');
+    if (e.key === 'ArrowDown' && open) {
+      e.preventDefault();
+      moveComboActive(1);
+    } else if (e.key === 'ArrowUp' && open) {
+      e.preventDefault();
+      moveComboActive(-1);
+    } else if (e.key === 'Enter' && open) {
+      if (comboActiveIndex >= 0) {
+        e.preventDefault();
+        const item = list.querySelector('.combo-item.active');
+        if (item) selectSection(item.dataset.value);
+      } else {
+        const exact = allSections.find((s) => s.toUpperCase() === input.value.trim().toUpperCase());
+        if (exact) {
+          e.preventDefault();
+          selectSection(exact);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      closeComboList();
+    }
+  });
+
+  input.addEventListener('blur', () => setTimeout(closeComboList, 120));
+}
+
 async function loadSections() {
-  const sel = document.getElementById('section');
   try {
     const res = await fetch('/api/sections');
-    const sections = await res.json();
-    if (!sections.length) {
-      sel.innerHTML = '<option value="">No published schedules yet</option>';
-      return;
+    allSections = await res.json();
+    if (!allSections.length) {
+      document.getElementById('section').placeholder = 'No published schedules yet';
     }
-    sel.innerHTML = '<option value="">Select your section</option>' +
-      sections.map((s) => `<option value="${s}">${s}</option>`).join('');
   } catch (e) {
-    sel.innerHTML = '<option value="">Failed to load sections</option>';
+    document.getElementById('section').placeholder = 'Failed to load sections';
   }
+  wireCombobox();
 }
 
 /* ── Day picker ── */
@@ -280,8 +380,12 @@ function renderResults(rows) {
 /* ── Search submit ── */
 document.getElementById('search-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const section = document.getElementById('section').value;
-  if (!section) return;
+  const raw = document.getElementById('section').value.trim().toUpperCase();
+  const section = allSections.find((s) => s.toUpperCase() === raw);
+  if (!section) {
+    setComboError(true);
+    return;
+  }
 
   const btn = e.target.querySelector('.search-btn');
   const btnText = btn.querySelector('.search-btn-text');

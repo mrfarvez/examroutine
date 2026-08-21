@@ -1,19 +1,26 @@
 {
   "name": "diu-exam-schedule-finder",
   "version": "1.0.0",
-  "description": "Admin uploads routine + seat plan PDFs; students search by section/roll to find exam room, date and time.",
+  "description": "Admin uploads routine + seat plan PDFs; students search by section to find exam room, date and time.",
   "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "migrate": "node migrate-to-neon.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "sql.js": "^1.14.0",
     "cookie-session": "^2.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
-    "pdfjs-dist": "^4.10.38"
+    "pdfjs-dist": "^4.10.38",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "sql.js": "^1.14.0"
   }
 }
