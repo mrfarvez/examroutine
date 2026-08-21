@@ -23,8 +23,6 @@ function ah(fn) {
 }
 
 async function createApp() {
-  const dbLayer = await db.ensureSchema();
-
   const app = express();
   app.set('trust proxy', 1);
   app.use(express.json());
@@ -245,7 +243,6 @@ async function createApp() {
     res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
   });
 
-  void dbLayer;
   return app;
 }
 
