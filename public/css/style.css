@@ -476,6 +476,29 @@ body:not(.admin-page) .header-inner { max-width: 720px; }
   font-weight: 500;
   color: #cfd3da;
 }
+.meta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.meta-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7b8194;
+}
+.meta-value {
+  font-size: 15px;
+  color: #eceef2;
+}
+.meta-time {
+  color: #a5acff;
+  font-weight: 600;
+}
+.meta-teacher {
+  font-weight: 700;
+}
 .meta-icon {
   width: 30px;
   height: 30px;

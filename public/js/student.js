@@ -278,11 +278,17 @@ function renderExamsForDate() {
         <div class="exam-meta">
           <div class="meta-row">
             <span class="meta-icon">&#128339;</span>
-            <span>${timeText}</span>
+            <div class="meta-text">
+              <span class="meta-label">Time</span>
+              <span class="meta-value meta-time">${timeText}</span>
+            </div>
           </div>
           <div class="meta-row">
             <span class="meta-icon">&#128100;</span>
-            <span>${e.teacher_initial || 'TBD'}</span>
+            <div class="meta-text">
+              <span class="meta-label">Teacher Initial</span>
+              <span class="meta-value meta-teacher">${e.teacher_initial || 'TBD'}</span>
+            </div>
           </div>
         </div>
         <p class="rooms-label">Your Rooms</p>
@@ -324,7 +330,7 @@ function startCountdown(exams) {
   document.getElementById('countdown-course').textContent =
     next.e.course_title || next.e.course_code || 'Upcoming Exam';
   document.getElementById('countdown-meta').textContent =
-    `${fmtDateFull(next.d)}${slot.start ? ` &middot; ${slot.start}${slot.end ? ' &ndash; ' + slot.end : ''}` : ''}`;
+    `${fmtDateFull(next.d)}${slot.start ? ` · ${slot.start}${slot.end ? ' – ' + slot.end : ''}` : ''}`;
 
   const timerEl = document.getElementById('countdown-timer');
 
