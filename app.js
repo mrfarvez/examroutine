@@ -198,6 +198,10 @@ async function createApp() {
   }));
 
   // ================= PUBLIC: sections list + student search =================
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(resolvePublicDir(), 'index.html'));
+  });
+
   app.get('/api/sections', ah(async (req, res) => {
     const rows = await db.query(`
       SELECT DISTINCT ee.section FROM exam_entries ee
@@ -230,7 +234,11 @@ async function createApp() {
     res.json(results);
   }));
 
-  // ================= ERROR HANDLER =================
+  // ================= 404 + ERROR HANDLER =================
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
+
   app.use((err, req, res, next) => {
     console.error('[error]', err);
     if (res.headersSent) return next(err);
