@@ -58,9 +58,13 @@ function slotStartMinutes(slot) {
   return h * 60 + min;
 }
 
-/* ── Room display: bare room numbers belong to the KT building ── */
+/* ── Room display: bare room numbers belong to the KT building,
+   letter-prefixed rooms get dash + zero-padded 3-digit form ── */
 function formatRoom(room) {
-  return /^[0-9]/.test(room) ? 'KT-' + room : room;
+  if (/^[0-9]/.test(room)) return 'KT-' + room;
+  const m = room.match(/^([A-Za-z]+)-?(\d{1,2})$/);
+  if (m) return `${m[1]}-${m[2].padStart(3, '0')}`;
+  return room;
 }
 
 /* ── Merge rows: same date+slot+course → one exam with rooms array ── */
