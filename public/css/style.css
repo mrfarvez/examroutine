@@ -59,32 +59,16 @@ body:not(.admin-page) .header-inner { max-width: 720px; }
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 12px;
 }
-.header-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, var(--accent), var(--accent-2));
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  display: grid;
-  place-items: center;
+.header-logo-img {
+  height: 48px;
+  width: auto;
+  display: block;
   flex-shrink: 0;
-  box-shadow: 0 6px 18px rgba(92, 77, 190, 0.35);
-}
-.brand-eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #8b93ff;
-  margin: 0 0 2px;
-  font-weight: 500;
 }
 .brand-title {
-  font-size: 19px;
+  font-size: 23px;
   font-weight: 700;
   color: #fff;
   margin: 0;
@@ -837,8 +821,8 @@ body.admin-page .login-shell {
 @media (max-width: 520px) {
   .wrap { padding: 16px 14px 50px; }
   .header-inner { padding: 12px 14px; }
-  .header-logo { width: 38px; height: 38px; border-radius: 12px; font-size: 12px; }
-  .brand-title { font-size: 16px; }
+  .header-logo-img { height: 40px; }
+  .brand-title { font-size: 18px; }
   .search-panel { padding: 16px; }
   .search-form { flex-direction: column; }
   .search-btn { width: 100%; }
