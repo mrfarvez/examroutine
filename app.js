@@ -24,11 +24,50 @@ function ah(fn) {
 
 async function createApp() {
   const app = express();
+  app.disable('x-powered-by');
   app.set('trust proxy', 1);
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(cookieSession({ name: 'sess', secret: SESSION_SECRET, maxAge: 24 * 60 * 60 * 1000 }));
+  app.use(cookieSession({
+    name: 'sess',
+    secret: SESSION_SECRET,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    httpOnly: true,
+    secure: process.env.VERCEL === '1'
+  }));
   app.use(express.static(resolvePublicDir()));
+
+  // ---------- login brute-force protection ----------
+  const LOGIN_WINDOW = 10 * 60 * 1000;
+  const LOGIN_MAX_ATTEMPTS = 5;
+  const loginAttempts = new Map();
+
+  function loginLimiter(req, res, next) {
+    const ip = req.ip || 'unknown';
+    const now = Date.now();
+    if (loginAttempts.size > 1000) {
+      for (const [k, v] of loginAttempts) {
+        if (now - v.first >= LOGIN_WINDOW) loginAttempts.delete(k);
+      }
+    }
+    const rec = loginAttempts.get(ip);
+    if (rec && rec.count >= LOGIN_MAX_ATTEMPTS && now - rec.first < LOGIN_WINDOW) {
+      return res.status(429).json({ error: 'Too many login attempts. Please try again in a few minutes.' });
+    }
+    next();
+  }
+
+  function recordLoginFailure(req) {
+    const ip = req.ip || 'unknown';
+    const rec = loginAttempts.get(ip) || { count: 0, first: Date.now() };
+    if (Date.now() - rec.first >= LOGIN_WINDOW) {
+      rec.count = 0;
+      rec.first = Date.now();
+    }
+    rec.count += 1;
+    loginAttempts.set(ip, rec);
+  }
 
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024 } });
 
@@ -57,12 +96,14 @@ async function createApp() {
   }
 
   // ================= AUTH =================
-  app.post('/api/admin/login', ah(async (req, res) => {
+  app.post('/api/admin/login', loginLimiter, ah(async (req, res) => {
     const { username, password } = req.body;
     const user = await db.get('SELECT * FROM admin_users WHERE username = $1', [username]);
     if (!user || !bcrypt.compareSync(password || '', user.password_hash)) {
+      recordLoginFailure(req);
       return res.status(401).json({ error: 'Invalid username or password' });
     }
+    loginAttempts.delete(req.ip || 'unknown');
     req.session.adminId = user.id;
     res.json({ ok: true, username: user.username });
   }));
