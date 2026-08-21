@@ -18,9 +18,6 @@
       ]
     }
   ],
-  "redirects": [
-    { "source": "/index.html", "destination": "/", "permanent": false }
-  ],
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/api/index.js" }
