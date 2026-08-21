@@ -428,3 +428,46 @@ document.getElementById('search-form').addEventListener('submit', async (e) => {
 });
 
 loadSections();
+
+const menuBtn = document.getElementById('menu-toggle');
+const siteMenu = document.getElementById('site-menu');
+const themeLabel = document.getElementById('theme-label');
+
+function syncThemeUi() {
+  const bright = document.documentElement.dataset.theme === 'bright';
+  if (themeLabel) themeLabel.textContent = bright ? 'Dark Mode' : 'Bright Mode';
+}
+
+if (menuBtn && siteMenu) {
+  const closeMenu = () => {
+    siteMenu.hidden = true;
+    menuBtn.classList.remove('open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+  };
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const willOpen = siteMenu.hidden;
+    siteMenu.hidden = !willOpen;
+    menuBtn.classList.toggle('open', willOpen);
+    menuBtn.setAttribute('aria-expanded', String(willOpen));
+  });
+  document.addEventListener('click', (e) => {
+    if (!siteMenu.hidden && !siteMenu.contains(e.target)) closeMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !siteMenu.hidden) closeMenu();
+  });
+}
+
+const themeToggle = document.getElementById('theme-toggle');
+if (themeToggle) {
+  syncThemeUi();
+  themeToggle.addEventListener('click', () => {
+    const root = document.documentElement;
+    const toBright = root.dataset.theme !== 'bright';
+    if (toBright) root.dataset.theme = 'bright';
+    else delete root.dataset.theme;
+    try { localStorage.setItem('diu-theme', toBright ? 'bright' : 'dark'); } catch (err) {}
+    syncThemeUi();
+  });
+}
