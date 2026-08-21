@@ -122,15 +122,36 @@ async function createApp() {
     if (!session) return res.status(404).json({ error: 'Session not found' });
     if (!req.file) return res.status(400).json({ error: 'No PDF uploaded (field name: pdf)' });
 
+    let parsed;
     try {
-      const { totalLines, parsedRows, unparsedLines, debug } = await parsePdfBuffer(req.file.buffer, type);
+      parsed = await parsePdfBuffer(req.file.buffer, type);
+    } catch (err) {
+      console.error('[parse]', err);
+      await db.run(`
+        INSERT INTO uploads (session_id, type, original_filename, parsed_row_count, status)
+        VALUES ($1, $2, $3, 0, 'failed')
+      `, [sessionId, type, req.file.originalname]).catch(() => {});
+      return res.status(500).json({ error: 'PDF parsing failed: ' + err.message });
+    }
 
+    const { totalLines, parsedRows, unparsedLines, debug } = parsed;
+
+    try {
       await db.transaction(async (client) => {
-        for (const r of parsedRows) {
+        const CHUNK = 100;
+        for (let i = 0; i < parsedRows.length; i += CHUNK) {
+          const chunk = parsedRows.slice(i, i + CHUNK);
+          const values = [];
+          const params = [];
+          chunk.forEach((r, idx) => {
+            const b = idx * 11;
+            values.push(`($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11})`);
+            params.push(sessionId, r.course_code || null, r.course_title || null, r.teacher_initial || null, r.section, r.exam_date || null, r.time_slot || null, r.room || null, r.roll_start || null, r.roll_end || null, r.source || 'seatplan');
+          });
           await client.query(`
             INSERT INTO exam_entries (session_id, course_code, course_title, teacher_initial, section, exam_date, time_slot, room, roll_start, roll_end, source)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-          `, [sessionId, r.course_code || null, r.course_title || null, r.teacher_initial || null, r.section, r.exam_date || null, r.time_slot || null, r.room || null, r.roll_start || null, r.roll_end || null, r.source || 'seatplan']);
+            VALUES ${values.join(',')}
+          `, params);
         }
       });
 
@@ -138,8 +159,16 @@ async function createApp() {
         INSERT INTO uploads (session_id, type, original_filename, parsed_row_count, status)
         VALUES ($1, $2, $3, $4, 'parsed')
       `, [sessionId, type, req.file.originalname, parsedRows.length]);
+    } catch (err) {
+      console.error('[db]', err);
+      await db.run(`
+        INSERT INTO uploads (session_id, type, original_filename, parsed_row_count, status)
+        VALUES ($1, $2, $3, 0, 'failed')
+      `, [sessionId, type, req.file.originalname]).catch(() => {});
+      return res.status(500).json({ error: 'Database error while saving rows: ' + err.message });
+    }
 
-      const uniqueSections = [...new Set(parsedRows.map((r) => r.section).filter(Boolean))];
+    const uniqueSections = [...new Set(parsedRows.map((r) => r.section).filter(Boolean))];
       const uniqueDates = [...new Set(parsedRows.map((r) => r.exam_date).filter(Boolean))];
       const uniqueSlots = [...new Set(parsedRows.map((r) => r.time_slot).filter(Boolean))];
 
@@ -154,14 +183,6 @@ async function createApp() {
         slots: uniqueSlots.sort(),
         debug: debug || null
       });
-    } catch (err) {
-      console.error(err);
-      await db.run(`
-        INSERT INTO uploads (session_id, type, original_filename, parsed_row_count, status)
-        VALUES ($1, $2, $3, 0, 'failed')
-      `, [sessionId, type, req.file.originalname]).catch(() => {});
-      res.status(500).json({ error: 'Failed to parse PDF: ' + err.message });
-    }
   }));
 
   // ================= REVIEW & FIX (edit parsed rows) =================
