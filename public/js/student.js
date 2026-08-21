@@ -58,6 +58,11 @@ function slotStartMinutes(slot) {
   return h * 60 + min;
 }
 
+/* ── Room display: bare room numbers belong to the KT building ── */
+function formatRoom(room) {
+  return /^[0-9]/.test(room) ? 'KT-' + room : room;
+}
+
 /* ── Merge rows: same date+slot+course → one exam with rooms array ── */
 function mergeExams(rows) {
   const map = new Map();
@@ -70,11 +75,15 @@ function mergeExams(rows) {
         course_code: r.course_code || '',
         course_title: r.course_title || '',
         teacher_initial: r.teacher_initial || '',
-        rooms: []
+        rooms: [],
+        seatMap: {}
       });
     }
     const exam = map.get(key);
-    if (r.room && !exam.rooms.includes(r.room)) exam.rooms.push(r.room);
+    if (r.room && !exam.rooms.includes(r.room)) {
+      exam.rooms.push(r.room);
+      exam.seatMap[r.room] = r.seats || null;
+    }
   }
   const exams = [...map.values()];
   exams.sort((a, b) => {
@@ -278,7 +287,10 @@ function renderExamsForDate() {
         </div>
         <p class="rooms-label">Your Rooms</p>
         <div class="room-chips">
-          ${(e.rooms.length ? e.rooms : ['TBD']).map((r) => `<span class="room-chip">${r}</span>`).join('')}
+          ${(e.rooms.length ? e.rooms : ['TBD']).map((r) => {
+            const seats = e.seatMap ? e.seatMap[r] : null;
+            return `<span class="room-chip">${r === 'TBD' ? r : formatRoom(r)}${seats ? ` <span class="chip-seats">(${seats})</span>` : ''}</span>`;
+          }).join('')}
         </div>
       </article>
     `;

@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS exam_entries (
   exam_date TEXT,
   time_slot TEXT,
   room TEXT,
+  seats INTEGER,
   roll_start INTEGER,
   roll_end INTEGER,
   source TEXT DEFAULT 'seatplan',
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS uploads (
 
 CREATE INDEX IF NOT EXISTS idx_entries_section ON exam_entries(section);
 CREATE INDEX IF NOT EXISTS idx_entries_session ON exam_entries(session_id);
+ALTER TABLE exam_entries ADD COLUMN IF NOT EXISTS seats INTEGER;
 `;
 
 function ensureSchema() {

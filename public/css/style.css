@@ -511,6 +511,11 @@ body:not(.admin-page) .header-inner { max-width: 720px; }
   border-radius: 9px;
   box-shadow: 0 3px 10px rgba(92, 77, 190, 0.25);
 }
+.chip-seats {
+  opacity: 0.72;
+  font-weight: 500;
+  font-size: 0.88em;
+}
 
 /* ── Empty / loading states ── */
 .empty-state {

@@ -144,12 +144,12 @@ async function createApp() {
           const values = [];
           const params = [];
           chunk.forEach((r, idx) => {
-            const b = idx * 11;
-            values.push(`($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11})`);
-            params.push(sessionId, r.course_code || null, r.course_title || null, r.teacher_initial || null, r.section, r.exam_date || null, r.time_slot || null, r.room || null, r.roll_start || null, r.roll_end || null, r.source || 'seatplan');
+            const b = idx * 12;
+            values.push(`($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11},$${b + 12})`);
+            params.push(sessionId, r.course_code || null, r.course_title || null, r.teacher_initial || null, r.section, r.exam_date || null, r.time_slot || null, r.room || null, r.seats || null, r.roll_start || null, r.roll_end || null, r.source || 'seatplan');
           });
           await client.query(`
-            INSERT INTO exam_entries (session_id, course_code, course_title, teacher_initial, section, exam_date, time_slot, room, roll_start, roll_end, source)
+            INSERT INTO exam_entries (session_id, course_code, course_title, teacher_initial, section, exam_date, time_slot, room, seats, roll_start, roll_end, source)
             VALUES ${values.join(',')}
           `, params);
         }
